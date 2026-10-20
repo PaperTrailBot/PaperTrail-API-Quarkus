@@ -64,12 +64,12 @@ class GuildServiceTest {
     }
 
     @Test
-    void viewGuild_success() {
+    void getGuild_success() {
 
         when(repository.findByIdOptional(TEST_GUILD_ID)).thenReturn(Optional.of(validEntity));
         when(mapper.toDTO(validEntity)).thenReturn(validDTO);
 
-        GuildDTO result = service.viewGuild(TEST_GUILD_ID);
+        GuildDTO result = service.getGuild(TEST_GUILD_ID);
         assertThat(result).isEqualTo(validDTO);
 
         verify(repository).findByIdOptional(TEST_GUILD_ID);
@@ -78,11 +78,11 @@ class GuildServiceTest {
     }
 
     @Test
-    void viewGuild_notSaved_throwsException() {
+    void getGuild_notSaved_throwsException() {
 
         when(repository.findByIdOptional(TEST_GUILD_ID)).thenReturn(Optional.empty());
 
-        assertThrows(GuildNotFoundException.class, () -> service.viewGuild(TEST_GUILD_ID));
+        assertThrows(GuildNotFoundException.class, () -> service.getGuild(TEST_GUILD_ID));
 
         verify(repository).findByIdOptional(TEST_GUILD_ID);
         verify(mapper, never()).toDTO(any());

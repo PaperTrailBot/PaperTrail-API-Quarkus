@@ -6,7 +6,7 @@ public interface GuildServiceInterface {
 
     void saveGuild(GuildDTO dto);
 
-    GuildDTO viewGuild(Long guildId);
+    GuildDTO getGuild(Long guildId);
 
     void updateGuild(Long guildId, GuildDTO updatedDto);
 

@@ -47,7 +47,7 @@ public final class GuildService implements GuildServiceInterface {
     @Override
     @Transactional
     @CacheResult(cacheName = "guild")
-    public @NotNull GuildDTO viewGuild(@NonNull @CacheKey Long guildId) {
+    public @NotNull GuildDTO getGuild(@NonNull @CacheKey Long guildId) {
 
         log.debug("Fetching guild configuration for [guildId={}", guildId);
 
