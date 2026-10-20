@@ -1,4 +1,4 @@
-package integration;
+package io.github.eggy03.papertrail.api.controller;
 
 import io.github.eggy03.papertrail.api.dto.MessageDTO;
 import io.github.eggy03.papertrail.api.entity.Message;
@@ -22,7 +22,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @QuarkusTest
-class MessageServiceIntegrationTest {
+class MessageControllerTest {
 
     private static final String BASE_PATH = "/api/v2/message";
 
