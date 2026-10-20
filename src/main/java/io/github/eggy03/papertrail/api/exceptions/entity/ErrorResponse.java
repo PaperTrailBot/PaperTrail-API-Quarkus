@@ -4,7 +4,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @AllArgsConstructor
@@ -17,7 +17,7 @@ public class ErrorResponse {
 
     private String message;
 
-    private LocalDateTime timeStamp;
+    private Instant timeStamp;
 
     private String path;
 }
