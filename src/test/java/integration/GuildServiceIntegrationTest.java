@@ -2,11 +2,14 @@ package integration;
 
 import io.github.eggy03.papertrail.api.dto.GuildDTO;
 import io.github.eggy03.papertrail.api.entity.Guild;
+import io.github.eggy03.papertrail.api.mapper.GuildMapper;
 import io.github.eggy03.papertrail.api.repository.GuildRepository;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.response.ValidatableResponse;
 import jakarta.inject.Inject;
+import lombok.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,20 +20,32 @@ import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.is;
 
 @QuarkusTest
 class GuildServiceIntegrationTest {
 
     private static final String BASE_PATH = "/api/v2/guild";
 
-    // prep a sample Entity
-    final Guild sampleEntity = new Guild(111111111111111L, 777777777777777L, 888888888888888L, 999999999999999L);
-    // prep a sample DTO
-    final GuildDTO sampleDTO = new GuildDTO(111111111111111L, 777777777777777L, 888888888888888L, 999999999999999L);
+    private static final Long GUILD_ID = 111111111111111L;
+
+    private static final Long GUILD_EVENT_CHANNEL_ID = 222222222222222L;
+    private static final Long MEMBER_EVENT_CHANNEL_ID = 333333333333333L;
+    private static final Long MESSAGE_EVENT_CHANNEL_ID = 444444444444444L;
+
+    private static final Long UPDATED_GUILD_EVENT_CHANNEL_ID = 555555555555555L;
+    private static final Long UPDATED_MEMBER_EVENT_CHANNEL_ID = 666666666666666L;
+    private static final Long UPDATED_MESSAGE_EVENT_CHANNEL_ID = 777777777777777L;
+
+    private static final Long NEGATIVE_GUILD_ID = -111111111111111L;
+    private static final Long NEGATIVE_GUILD_EVENT_CHANNEL_ID = -222222222222222L;
+    private static final Long NEGATIVE_MEMBER_EVENT_CHANNEL_ID = -333333333333333L;
+    private static final Long NEGATIVE_MESSAGE_EVENT_CHANNEL_ID = -444444444444444L;
 
     @Inject
     GuildRepository repository;
+
+    @Inject
+    GuildMapper mapper;
 
     // RedisDataSource while not annotated for CDI, does get injected because Quarkus handles this synthetic bean
     // Or IntelliJ does not see the dependencies
@@ -39,65 +54,51 @@ class GuildServiceIntegrationTest {
     RedisDataSource redisDataSource;
 
     // prep a stream of valid DTOs
-    public static Stream<GuildDTO> validDTOs() {
+    public static @NonNull Stream<GuildDTO> validDTOs() {
 
-        final Long GUILD_ID = 111111111111111L;
-        final Long GUILD_EVENT_CHANNEL_ID = 222222222222222L;
-        final Long MEMBER_EVENT_CHANNEL_ID = 333333333333333L;
-        final Long MESSAGE_EVENT_CHANNEL_ID = 444444444444444L;
+        return Stream.of(
+                // no nulls
+                new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID),
 
-        GuildDTO validDTO = new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID);
+                // at-most one null
+                new GuildDTO(GUILD_ID, null, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID),
+                new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, null, MESSAGE_EVENT_CHANNEL_ID),
+                new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, null),
 
-        GuildDTO nullGuildEventChannelIdDTO = new GuildDTO(GUILD_ID, null, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID);
-        GuildDTO nullMemberEventChannelIdDTO = new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, null, MESSAGE_EVENT_CHANNEL_ID);
-        GuildDTO nullMessageEventChannelIdDTO = new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, null);
-
-        GuildDTO onlyGuildEventChannelIdDTO = new GuildDTO(GUILD_ID, null, null, GUILD_EVENT_CHANNEL_ID);
-        GuildDTO onlyMemberEventChannelIdDTO = new GuildDTO(GUILD_ID, null, MEMBER_EVENT_CHANNEL_ID, null);
-        GuildDTO onlyMessageEventChannelIdDTO = new GuildDTO(GUILD_ID, null, null, MESSAGE_EVENT_CHANNEL_ID);
-
-        return Stream.of(validDTO,
-                nullGuildEventChannelIdDTO, nullMemberEventChannelIdDTO, nullMessageEventChannelIdDTO,
-                onlyGuildEventChannelIdDTO, onlyMemberEventChannelIdDTO, onlyMessageEventChannelIdDTO
+                // at-most 2 nulls
+                new GuildDTO(GUILD_ID, null, null, GUILD_EVENT_CHANNEL_ID),
+                new GuildDTO(GUILD_ID, null, MEMBER_EVENT_CHANNEL_ID, null),
+                new GuildDTO(GUILD_ID, null, null, MESSAGE_EVENT_CHANNEL_ID)
         );
     }
 
     // prep a stream of negative DTOs
-    public static Stream<GuildDTO> negativeDTOs() {
-
-        final Long GUILD_ID = 111111111111111L;
-        final Long GUILD_EVENT_CHANNEL_ID = 222222222222222L;
-        final Long MEMBER_EVENT_CHANNEL_ID = 333333333333333L;
-        final Long MESSAGE_EVENT_CHANNEL_ID = 444444444444444L;
-
-        final Long NEGATIVE_GUILD_ID = -111111111111111L;
-        final Long NEGATIVE_GUILD_EVENT_CHANNEL_ID = -222222222222222L;
-        final Long NEGATIVE_MEMBER_EVENT_CHANNEL_ID = -333333333333333L;
-        final Long NEGATIVE_MESSAGE_EVENT_CHANNEL_ID = -444444444444444L;
-
-        GuildDTO negativeGuildIdDTO = new GuildDTO(NEGATIVE_GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID);
-        GuildDTO negativeGuildEventChannelIdDTO = new GuildDTO(GUILD_ID, NEGATIVE_GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID);
-        GuildDTO negativeMemberEventChannelIdDTO = new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, NEGATIVE_MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID);
-        GuildDTO negativeMessageEventChannelIdDTO = new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, NEGATIVE_MESSAGE_EVENT_CHANNEL_ID);
+    public static @NonNull Stream<GuildDTO> negativeDTOs() {
 
         return Stream.of(
-                negativeGuildIdDTO, negativeGuildEventChannelIdDTO,
-                negativeMemberEventChannelIdDTO, negativeMessageEventChannelIdDTO
+                new GuildDTO(NEGATIVE_GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID),
+                new GuildDTO(GUILD_ID, NEGATIVE_GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID),
+                new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, NEGATIVE_MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID),
+                new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, NEGATIVE_MESSAGE_EVENT_CHANNEL_ID)
         );
     }
 
     // prep a stream of null DTOs
-    public static Stream<GuildDTO> nullDTOs() {
+    public static @NonNull Stream<GuildDTO> nullDTOs() {
 
-        final Long GUILD_ID = 111111111111111L;
-        final Long GUILD_EVENT_CHANNEL_ID = 222222222222222L;
-        final Long MEMBER_EVENT_CHANNEL_ID = 333333333333333L;
-        final Long MESSAGE_EVENT_CHANNEL_ID = 444444444444444L;
+        return Stream.of(
+                new GuildDTO(null, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID),
+                new GuildDTO(GUILD_ID, null, null, null)
+        );
+    }
 
-        GuildDTO nullGuildIdDTO = new GuildDTO(null, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID);
-        GuildDTO allNullEventChannelIdDTO = new GuildDTO(GUILD_ID, null, null, null);
+    // individual DTOs
+    public static @NonNull GuildDTO validDTO() {
+        return new GuildDTO(GUILD_ID, GUILD_EVENT_CHANNEL_ID, MEMBER_EVENT_CHANNEL_ID, MESSAGE_EVENT_CHANNEL_ID);
+    }
 
-        return Stream.of(nullGuildIdDTO, allNullEventChannelIdDTO);
+    public static @NonNull GuildDTO updatedDTO() {
+        return new GuildDTO(GUILD_ID, UPDATED_GUILD_EVENT_CHANNEL_ID, UPDATED_MEMBER_EVENT_CHANNEL_ID, UPDATED_MESSAGE_EVENT_CHANNEL_ID);
     }
 
     @BeforeEach
@@ -106,15 +107,43 @@ class GuildServiceIntegrationTest {
         redisDataSource.flushall();
     }
 
-    @ParameterizedTest
-    @MethodSource("validDTOs")
-    void saveGuild_success(GuildDTO dto) {
-
-        given().contentType("application/json").body(dto)
+    // repeated rest-assured calls
+    ValidatableResponse postGuild(@NonNull GuildDTO guildDTO) {
+        return given()
+                .contentType("application/json")
+                .body(guildDTO)
                 .when().post(BASE_PATH)
-                .then().statusCode(201);
+                .then();
+    }
 
-        // assert that save was a success
+    ValidatableResponse getGuild(long guildId) {
+        return given()
+                .contentType("application/json")
+                .when()
+                .get(BASE_PATH + "/" + guildId)
+                .then();
+    }
+
+    ValidatableResponse patchGuild(@NonNull GuildDTO guildDTO) {
+        return given()
+                .contentType("application/json")
+                .body(guildDTO)
+                .when()
+                .patch(BASE_PATH)
+                .then();
+    }
+
+    ValidatableResponse deleteGuild(long guildId) {
+        return given()
+                .contentType("application/json")
+                .when()
+                .delete(BASE_PATH + "/" + guildId)
+                .then();
+    }
+
+    // repeated assertion calls
+    void assertGuildExistsAndValidateIt(@NonNull GuildDTO dto) {
+
         Optional<Guild> entityOptional = QuarkusTransaction
                 .requiringNew()
                 .call(() -> repository.findByIdOptional(dto.getGuildId()));
@@ -122,230 +151,145 @@ class GuildServiceIntegrationTest {
         assertThat(entityOptional)
                 .isPresent()
                 .get()
-                .extracting(Guild::getGuildId, Guild::getGuildEventChannelId, Guild::getMemberEventChannelId, Guild::getMessageEventChannelId)
-                .containsExactly(dto.getGuildId(), dto.getGuildEventChannelId(), dto.getMemberEventChannelId(), dto.getMessageEventChannelId());
+                .satisfies(guild -> {
+                    assertThat(guild.getGuildId()).isEqualTo(dto.getGuildId());
+                    assertThat(guild.getGuildEventChannelId()).isEqualTo(dto.getGuildEventChannelId());
+                    assertThat(guild.getMemberEventChannelId()).isEqualTo(dto.getMemberEventChannelId());
+                    assertThat(guild.getMessageEventChannelId()).isEqualTo(dto.getMessageEventChannelId());
+                });
+    }
+
+    void assertGuildDoesNotExist(@NonNull GuildDTO dto) {
+
+        Optional<Guild> entityOptional = QuarkusTransaction
+                .requiringNew()
+                .call(() -> repository.findByIdOptional(dto.getGuildId()));
+
+        assertThat(entityOptional).isEmpty();
+    }
+
+    void assertRepositoryEmpty() {
+        assertThat(repository.findAll().list()).isEmpty();
+    }
+
+    // repeated repository calls
+    void persistGuild(@NonNull GuildDTO guildDTO) {
+        QuarkusTransaction.requiringNew().run(() -> repository.persistAndFlush(mapper.toEntity(guildDTO)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("validDTOs")
+    void saveGuild_success(GuildDTO dto) {
+        postGuild(dto).statusCode(201);
+        // assert that save was a success
+        assertGuildExistsAndValidateIt(dto);
     }
 
     @ParameterizedTest
     @MethodSource("validDTOs")
     void saveGuild_alreadyExists_conflicts(GuildDTO dto) {
-
         // register once, expect success
-        given().contentType("application/json").body(dto)
-                .when().post(BASE_PATH)
-                .then().statusCode(201);
-
+        postGuild(dto).statusCode(201);
         // register again, expect 409 conflict
-        given().contentType("application/json").body(dto)
-                .when().post(BASE_PATH)
-                .then().statusCode(409);
+        postGuild(dto).statusCode(409);
+        // assert that the data wasn't modified
+        assertGuildExistsAndValidateIt(dto);
 
     }
 
     @ParameterizedTest
-    @MethodSource("negativeDTOs")
-    void saveGuild_negativeDTOs_validationFails_badRequest(GuildDTO dto) {
-
-        given().contentType("application/json").body(dto)
-                .when().post(BASE_PATH)
-                .then().statusCode(400);
-
-        // assert that nothing was saved
-        Optional<Guild> entityOptional = QuarkusTransaction
-                .requiringNew()
-                .call(() -> repository.findByIdOptional(dto.getGuildId()));
-
-        assertThat(entityOptional).isEmpty();
+    @MethodSource({"negativeDTOs", "nullDTOs"})
+    void saveGuild_negativeAndNullDTOs_validationFails_badRequest(GuildDTO dto) {
+        postGuild(dto).statusCode(400);
+        assertRepositoryEmpty();
     }
 
     @ParameterizedTest
-    @MethodSource("nullDTOs")
-    void saveGuild_nullDTOs_validationFails_badRequest(GuildDTO dto) {
-
-        given().contentType("application/json").body(dto)
-                .when().post(BASE_PATH)
-                .then().statusCode(400);
-
-        // assert that nothing was saved
-        assertThat(repository.findAll().list()).isEmpty();
-    }
-
-    @Test
-    void saveGuild_deserializationFails_badRequest() {
-
-        given().contentType("application/json").body("\"text\"")
-                .when().post(BASE_PATH)
-                .then().statusCode(400);
-
-    }
-
-    @Test
-    void viewGuild_success() {
-
+    @MethodSource("validDTOs")
+    void viewGuild_success(GuildDTO dto) {
         // register
-        QuarkusTransaction.requiringNew().run(() -> repository.persistAndFlush(sampleEntity));
-
+        persistGuild(dto);
         // view registered guild - expect success
-        given().contentType("application/json")
-                .when().get(BASE_PATH + "/" + sampleEntity.getGuildId())
-                .then().statusCode(200)
-                .body("guildId", is(sampleEntity.getGuildId()))
-                .body("guildEventChannelId", is(sampleEntity.getGuildEventChannelId()))
-                .body("memberEventChannelId", is(sampleEntity.getMemberEventChannelId()))
-                .body("messageEventChannelId", is(sampleEntity.getMessageEventChannelId()));
-
-    }
-
-    @Test
-    void viewGuild_notRegistered_notFound() {
-
-        long nonExistentGuildId = 999999999999999L;
-
-        // view un-registered guild - expect not found
-        given().contentType("application/json")
-                .when().get(BASE_PATH + "/" + nonExistentGuildId)
-                .then().statusCode(404);
-
-    }
-
-    @Test
-    void viewGuild_invalidParameters() {
-
-        long negativeGuildId = -999999999999999L;
-
-        given().contentType("application/json")
-                .when().get(BASE_PATH + "/" + negativeGuildId)
-                .then().statusCode(400);
+        getGuild(dto.getGuildId()).statusCode(200);
+        // validate
+        assertGuildExistsAndValidateIt(dto);
 
     }
 
     @ParameterizedTest
     @MethodSource("validDTOs")
-    void updateGuild_success(GuildDTO updatedDTO) {
+    void viewGuild_notRegistered_notFound(@NonNull GuildDTO dto) {
+        getGuild(dto.getGuildId()).statusCode(404);
+        assertGuildDoesNotExist(dto);
+    }
 
+    @Test
+    void viewGuild_invalidParameters() {
+        getGuild(NEGATIVE_GUILD_ID).statusCode(400);
+    }
+
+    @ParameterizedTest
+    @MethodSource("validDTOs")
+    void updateGuild_success(GuildDTO dto) {
+        // assert guild did not exist before
+        assertGuildDoesNotExist(dto);
         // register
-        QuarkusTransaction.requiringNew().run(() -> repository.persistAndFlush(sampleEntity));
-
+        persistGuild(dto);
+        // validate its existence
+        assertGuildExistsAndValidateIt(dto);
         // update
-        given().contentType("application/json").body(updatedDTO)
-                .when().patch(BASE_PATH)
-                .then().statusCode(204);
-
+        patchGuild(updatedDTO()).statusCode(204);
         // verify update
-        Optional<Guild> entityOptional = QuarkusTransaction
-                .requiringNew()
-                .call(() -> repository.findByIdOptional(sampleEntity.getGuildId()));
-
-        assertThat(entityOptional)
-                .isPresent()
-                .get()
-                .extracting(Guild::getGuildId, Guild::getGuildEventChannelId, Guild::getMemberEventChannelId, Guild::getMessageEventChannelId)
-                .containsExactly(sampleEntity.getGuildId(), updatedDTO.getGuildEventChannelId(), updatedDTO.getMemberEventChannelId(), updatedDTO.getMessageEventChannelId());
-
+        assertGuildExistsAndValidateIt(updatedDTO());
     }
 
-    @Test
-    void updateGuild_doesNotExist() {
-
+    @ParameterizedTest
+    @MethodSource("validDTOs")
+    void updateGuild_doesNotExist(GuildDTO dto) {
         // update without registering
-        given().contentType("application/json").body(sampleDTO)
-                .when().patch(BASE_PATH)
-                .then().statusCode(404);
-
+        patchGuild(dto).statusCode(404);
         // verify update didn't register a new guild
-        Optional<Guild> entityOptional = QuarkusTransaction
-                .requiringNew()
-                .call(() -> repository.findByIdOptional(sampleDTO.getGuildId()));
-
-        assertThat(entityOptional).isEmpty();
+        assertGuildDoesNotExist(dto);
 
     }
 
     @ParameterizedTest
-    @MethodSource("negativeDTOs")
-    void updateGuild_negativeDTOs_validationFails_badRequest(GuildDTO dto) {
-
-        given().contentType("application/json").body(dto)
-                .when().patch(BASE_PATH)
-                .then().statusCode(400);
-
-        // assert that nothing was updated
-        Optional<Guild> entityOptional = QuarkusTransaction
-                .requiringNew()
-                .call(() -> repository.findByIdOptional(dto.getGuildId()));
-
-        assertThat(entityOptional).isEmpty();
+    @MethodSource({"negativeDTOs", "nullDTOs"})
+    void updateGuild_negativeAndNullDTOs_validationFails_badRequest(GuildDTO dto) {
+        // persist a guild
+        persistGuild(validDTO());
+        // try updating with invalid parameters
+        patchGuild(dto).statusCode(400);
+        // verify nothing was changed
+        assertGuildExistsAndValidateIt(validDTO());
     }
 
     @ParameterizedTest
-    @MethodSource("nullDTOs")
-    void updateGuild_nullDTOs_validationFails_badRequest(GuildDTO dto) {
-
-        given().contentType("application/json").body(dto)
-                .when().patch(BASE_PATH)
-                .then().statusCode(400);
-
-        // assert that nothing was saved
-        assertThat(repository.findAll().list()).isEmpty();
-    }
-
-    @Test
-    void updateGuild_deserializationFails_badRequest() {
-
-        given().contentType("application/json").body("\"text\"")
-                .when().patch(BASE_PATH)
-                .then().statusCode(400);
-
-    }
-
-    @Test
-    void deleteGuild_success() {
-
+    @MethodSource("validDTOs")
+    void deleteGuild_success(GuildDTO dto) {
         // register
-        QuarkusTransaction.requiringNew().run(() -> repository.persistAndFlush(sampleEntity));
-
+        persistGuild(dto);
+        // verify existence
+        assertGuildExistsAndValidateIt(dto);
         // delete
-        given().contentType("application/json")
-                .when().delete(BASE_PATH + "/" + sampleEntity.getGuildId())
-                .then().statusCode(204);
-
+        deleteGuild(dto.getGuildId()).statusCode(204);
         // verify deletion
-        Optional<Guild> entityOptional = QuarkusTransaction
-                .requiringNew()
-                .call(() -> repository.findByIdOptional(sampleEntity.getGuildId()));
-
-        assertThat(entityOptional).isEmpty();
-
+        assertGuildDoesNotExist(dto);
     }
 
-    @Test
-    void deleteGuild_doesNotExist_notFound() {
-
-        long nonExistentGuildId = 999999999999999L;
-
-        // attempt delete
-        given().contentType("application/json")
-                .when().delete(BASE_PATH + "/" + nonExistentGuildId)
-                .then().statusCode(404);
-
+    @ParameterizedTest
+    @MethodSource("validDTOs")
+    void deleteGuild_doesNotExist_notFound(@NonNull GuildDTO dto) {
+        // attempt to delete without persisting
+        deleteGuild(dto.getGuildId()).statusCode(404);
         // verify guild actually does not exist
-        Optional<Guild> entityOptional = QuarkusTransaction
-                .requiringNew()
-                .call(() -> repository.findByIdOptional(nonExistentGuildId));
-
-        assertThat(entityOptional).isEmpty();
+        assertGuildDoesNotExist(dto);
 
     }
 
     @Test
     void deleteGuild_invalidParameters() {
-
-        long negativeGuildId = -999999999999999L;
-
-        given().contentType("application/json")
-                .when().delete(BASE_PATH + "/" + negativeGuildId)
-                .then().statusCode(400);
-
+        deleteGuild(NEGATIVE_GUILD_ID).statusCode(400);
     }
 
 }
