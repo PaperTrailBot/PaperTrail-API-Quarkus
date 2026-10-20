@@ -1,11 +1,10 @@
-package unit;
+package io.github.eggy03.papertrail.api.service;
 
 import io.github.eggy03.papertrail.api.dto.MessageDTO;
 import io.github.eggy03.papertrail.api.entity.Message;
 import io.github.eggy03.papertrail.api.exceptions.MessageNotFoundException;
 import io.github.eggy03.papertrail.api.mapper.MessageMapper;
 import io.github.eggy03.papertrail.api.repository.MessageRepository;
-import io.github.eggy03.papertrail.api.service.MessageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,7 +23,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class MessageServiceUnitTest {
+class MessageServiceTest {
 
     static final Long TEST_MESSAGE_ID = 1302148573926148096L;
     static final String TEST_MESSAGE_CONTENT = "message";

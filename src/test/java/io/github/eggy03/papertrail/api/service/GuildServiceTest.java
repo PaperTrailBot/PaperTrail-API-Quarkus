@@ -1,4 +1,4 @@
-package unit;
+package io.github.eggy03.papertrail.api.service;
 
 import io.github.eggy03.papertrail.api.dto.GuildDTO;
 import io.github.eggy03.papertrail.api.entity.Guild;
@@ -6,7 +6,6 @@ import io.github.eggy03.papertrail.api.exceptions.AllChannelsNullException;
 import io.github.eggy03.papertrail.api.exceptions.GuildNotFoundException;
 import io.github.eggy03.papertrail.api.mapper.GuildMapper;
 import io.github.eggy03.papertrail.api.repository.GuildRepository;
-import io.github.eggy03.papertrail.api.service.GuildService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,7 +25,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class GuildServiceUnitTest {
+class GuildServiceTest {
 
     static final Long TEST_GUILD_ID = 1302148573926148096L;
     static final Long TEST_GUILD_EVENT_CHANNEL_ID = 1302148573926148097L;
