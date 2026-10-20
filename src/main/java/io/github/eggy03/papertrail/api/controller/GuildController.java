@@ -41,7 +41,7 @@ public class GuildController {
     @RunOnVirtualThread
     public Response getGuild(@PathParam("guildId") @Positive @NotNull Long guildId) {
         return Response
-                .ok(service.viewGuild(guildId))
+                .ok(service.getGuild(guildId))
                 .build();
     }
 

@@ -206,10 +206,10 @@ class GuildControllerTest {
 
     @ParameterizedTest
     @MethodSource("validDTOs")
-    void viewGuild_success(GuildDTO dto) {
+    void getGuild_success(GuildDTO dto) {
         // save
         persistGuild(dto);
-        // view saved guild - expect success
+        // get saved guild - expect success
         getGuild(dto.getGuildId()).statusCode(200);
         // validate
         assertGuildExistsAndValidateIt(dto);
@@ -218,13 +218,13 @@ class GuildControllerTest {
 
     @ParameterizedTest
     @MethodSource("validDTOs")
-    void viewGuild_notRegistered_notFound(@NonNull GuildDTO dto) {
+    void getGuild_notRegistered_notFound(@NonNull GuildDTO dto) {
         getGuild(dto.getGuildId()).statusCode(404);
         assertGuildDoesNotExist(dto);
     }
 
     @Test
-    void viewGuild_invalidParameters() {
+    void getGuild_invalidParameters() {
         getGuild(NEGATIVE_GUILD_ID).statusCode(400);
     }
 
