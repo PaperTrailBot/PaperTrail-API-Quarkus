@@ -30,7 +30,7 @@ public class GuildController {
     @POST
     @Blocking
     @RunOnVirtualThread
-    public Response registerGuild(@Valid GuildDTO dto) {
+    public Response saveGuild(@Valid GuildDTO dto) {
         service.saveGuild(dto);
         return Response.status(Response.Status.CREATED).build();
     }

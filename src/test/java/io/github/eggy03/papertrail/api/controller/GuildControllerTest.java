@@ -188,9 +188,9 @@ class GuildControllerTest {
     @ParameterizedTest
     @MethodSource("validDTOs")
     void saveGuild_alreadyExists_conflicts(GuildDTO dto) {
-        // register once, expect success
+        // save once, expect success
         postGuild(dto).statusCode(201);
-        // register again, expect 409 conflict
+        // save again, expect 409 conflict
         postGuild(dto).statusCode(409);
         // assert that the data wasn't modified
         assertGuildExistsAndValidateIt(dto);
@@ -207,9 +207,9 @@ class GuildControllerTest {
     @ParameterizedTest
     @MethodSource("validDTOs")
     void viewGuild_success(GuildDTO dto) {
-        // register
+        // save
         persistGuild(dto);
-        // view registered guild - expect success
+        // view saved guild - expect success
         getGuild(dto.getGuildId()).statusCode(200);
         // validate
         assertGuildExistsAndValidateIt(dto);
@@ -233,7 +233,7 @@ class GuildControllerTest {
     void updateGuild_success(GuildDTO dto) {
         // assert guild did not exist before
         assertGuildDoesNotExist(dto);
-        // register
+        // save
         persistGuild(dto);
         // validate its existence
         assertGuildExistsAndValidateIt(dto);
@@ -246,9 +246,9 @@ class GuildControllerTest {
     @ParameterizedTest
     @MethodSource("validDTOs")
     void updateGuild_doesNotExist(GuildDTO dto) {
-        // update without registering
+        // update without saving
         patchGuild(dto).statusCode(404);
-        // verify update didn't register a new guild
+        // verify update didn't save a new guild
         assertGuildDoesNotExist(dto);
 
     }
@@ -267,7 +267,7 @@ class GuildControllerTest {
     @ParameterizedTest
     @MethodSource("validDTOs")
     void deleteGuild_success(GuildDTO dto) {
-        // register
+        // save
         persistGuild(dto);
         // verify existence
         assertGuildExistsAndValidateIt(dto);
